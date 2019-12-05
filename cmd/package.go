@@ -19,12 +19,9 @@ var packageCmd = &cobra.Command{
 For example: sb-release -b Release/19.69.0`,
 	Run: func(cmd *cobra.Command, args []string) {
 		branch, _ := cmd.Flags().GetString("branch")
-
-		if branch == "" {
-			branch = "currentBranch"
-		}
-		fmt.Println("Prepare release for " + branch + "?")
-		gitBranchName()
+		actualBranch := gitBranchName()
+		print(branch)
+		print(actualBranch)
 	},
 }
 
@@ -42,10 +39,18 @@ func init() {
 	packageCmd.Flags().BoolP("branch", "b", false, "Branch name to prepare a release for.")
 }
 
-func gitBranchName() {
-	command := exec.Command("git rev-parse --abbrev-ref HEAD")
-	err := command.Run()
+func findGitInPath() {
+	path, err := exec.LookPath("git")
 	if err != nil {
-		log.Fatalf("cmd.Run() failed with %s\n", err)
+		log.Fatal("You should probably install git if you want to release")
 	}
+	fmt.Printf("git is available at %s\n", path)
+}
+
+func gitBranchName() string {
+	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(out)
 }
